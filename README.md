@@ -10,11 +10,19 @@ A lightweight Node.js HTTP framework inspired by the StartJS architecture docume
 - Validation engine with compile-time rules
 - Simple CRUD generator scaffolding
 - Custom request/response helpers
+- Built-in security middleware and production-safe defaults
+- Plugin/provider architecture for extensibility
+- Metrics and structured request logging
+
+## Examples
+
+- `examples/app.js` — base framework example with basic routing and CRUD generation
+- `examples/advanced-app.js` — advanced usage with plugins, schema validation, metrics, and security defaults
 
 ## Quick Start
 
 ```js
-import { createApp, bodyParser, cors, logger } from './src/index.js';
+import { createApp, bodyParser, cors, logger } from "./src/index.js";
 
 const app = createApp();
 
@@ -22,11 +30,11 @@ app.use(logger());
 app.use(cors());
 app.use(bodyParser());
 
-app.get('/hello/:name', (req, res) => {
+app.get("/hello/:name", (req, res) => {
   res.success({ message: `Hello ${req.params.name}` });
 });
 
 app.listen(3000, () => {
-  console.log('StartJS app running on http://localhost:3000');
+  console.log("StartJS app running on http://localhost:3000");
 });
 ```

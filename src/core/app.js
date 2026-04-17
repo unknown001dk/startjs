@@ -4,16 +4,68 @@ import { compose } from "../middleware/compose.js";
 import { Request } from "./request.js";
 import { Response } from "./response.js";
 import { HttpError } from "./error.js";
+import { security } from "../middleware/security.js";
 
 export class StartApp {
   constructor({ errorHandler } = {}) {
     this.router = new Router();
     this.globalMiddleware = [];
+    this.plugins = new Map();
+    this.providers = new Map();
+    this.settings = new Map();
+    this.settings.set("env", process.env.NODE_ENV || "development");
+    this.settings.set("secureHeaders", true);
     this.errorHandler = errorHandler || this.defaultErrorHandler.bind(this);
+    this.use(security());
+  }
+
+  set(name, value) {
+    this.settings.set(name, value);
+    return this;
+  }
+
+  get(name) {
+    return this.settings.get(name);
+  }
+
+  get env() {
+    return this.get("env");
+  }
+
+  get isProduction() {
+    return this.env === "production";
   }
 
   use(...middlewares) {
-    this.globalMiddleware.push(...middlewares);
+    this.globalMiddleware.push(...middlewares.flat());
+    return this;
+  }
+
+  error(handler) {
+    this.errorHandler = handler;
+    return this;
+  }
+
+  provide(name, value) {
+    this.providers.set(name, value);
+    return this;
+  }
+
+  getProvider(name) {
+    return this.providers.get(name);
+  }
+
+  plugin(plugin, options = {}) {
+    if (typeof plugin === "function") {
+      plugin(this, options);
+    } else if (plugin && typeof plugin.init === "function") {
+      plugin.init(this, options);
+    }
+
+    if (plugin && plugin.name) {
+      this.plugins.set(plugin.name, { plugin, options });
+    }
+
     return this;
   }
 

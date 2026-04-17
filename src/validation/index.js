@@ -1,3 +1,4 @@
-export { compileSchema } from './compiler.js';
-export { validate } from './validator.js';
-export { rules } from './rules.js';
+export { compileSchema } from "./compiler.js";
+export { validate } from "./validator.js";
+export { rules } from "./rules.js";
+export { schema } from "./schema.js";

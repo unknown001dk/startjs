@@ -1,10 +1,24 @@
-export function logger() {
+export function logger(options = {}) {
+  const { level = "info" } = options;
+
   return (req, res, next) => {
     const start = Date.now();
-    res.once('finish', () => {
+
+    res.once("finish", () => {
       const elapsed = Date.now() - start;
-      console.log(`${req.method} ${req.url} ${res.statusCode} - ${elapsed}ms`);
+      res.setHeader("X-Response-Time", `${elapsed}ms`);
+      const log = {
+        requestId: req.id,
+        method: req.method,
+        path: req.path,
+        url: req.url,
+        status: res.statusCode,
+        durationMs: elapsed,
+        level,
+      };
+      console.log(JSON.stringify(log));
     });
+
     return next();
   };
 }
