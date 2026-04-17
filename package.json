@@ -1,0 +1,14 @@
+{
+  "name": "startjs-framework",
+  "version": "0.1.0",
+  "description": "A lightweight Node.js HTTP framework inspired by StartJS architecture.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node examples/app.js",
+    "test": "node --test"
+  },
+  "keywords": ["http","framework","startjs","node"],
+  "author": "StartJS",
+  "license": "MIT"
+}

@@ -1,0 +1,290 @@
+                                    ┌─────────────────────┐
+                                    │     Client App      │
+                                    │ Web / Mobile / API  │
+                                    └──────────┬──────────┘
+                                               │
+                                               │ HTTP Request
+                                               ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              STARTJS FRAMEWORK                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                         1. CORE HTTP SERVER                           │  │
+│  │                                                                        │  │
+│  │  Native Node.js HTTP Server                                            │  │
+│  │  - createServer()                                                      │  │
+│  │  - Creates req / res objects                                            │  │
+│  │  - Global error handling                                                │  │
+│  │                                                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                    2. GLOBAL MIDDLEWARE PIPELINE                      │  │
+│  │                                                                        │  │
+│  │  Request Flow:                                                         │  │
+│  │                                                                        │  │
+│  │  Logger                                                                │  │
+│  │    ↓                                                                   │  │
+│  │  CORS                                                                  │  │
+│  │    ↓                                                                   │  │
+│  │  Body Parser                                                           │  │
+│  │    ↓                                                                   │  │
+│  │  Authentication                                                        │  │
+│  │    ↓                                                                   │  │
+│  │  Rate Limiter                                                          │  │
+│  │    ↓                                                                   │  │
+│  │  Custom Middleware                                                     │  │
+│  │                                                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                           3. TRIE ROUTER                              │  │
+│  │                                                                        │  │
+│  │  Route Tree                                                            │  │
+│  │                                                                        │  │
+│  │  root                                                                  │  │
+│  │   ├── users                                                            │  │
+│  │   │    ├── GET                                                         │  │
+│  │   │    ├── POST                                                        │  │
+│  │   │    └── :id                                                         │  │
+│  │   │         ├── GET                                                    │  │
+│  │   │         ├── PUT                                                    │  │
+│  │   │         └── DELETE                                                 │  │
+│  │   │                                                                    │  │
+│  │   ├── products                                                         │  │
+│  │   ├── auth                                                             │  │
+│  │   └── students                                                         │  │
+│  │                                                                        │  │
+│  │  Example:                                                              │  │
+│  │  GET /users/12                                                         │  │
+│  │     → users                                                            │  │
+│  │     → :id = 12                                                         │  │
+│  │                                                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                        4. PARAM EXTRACTION                             │  │
+│  │                                                                        │  │
+│  │  /users/:id                                                            │  │
+│  │                                                                        │  │
+│  │  Converts into:                                                        │  │
+│  │                                                                        │  │
+│  │  req.params = {                                                        │  │
+│  │      id: "12"                                                          │  │
+│  │  }                                                                     │  │
+│  │                                                                        │  │
+│  │  Query Example:                                                        │  │
+│  │  /users?page=1&limit=10                                                │  │
+│  │                                                                        │  │
+│  │  req.query = {                                                         │  │
+│  │      page: "1",                                                        │  │
+│  │      limit: "10"                                                       │  │
+│  │  }                                                                     │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                         5. VALIDATION ENGINE                           │  │
+│  │                                                                        │  │
+│  │  Route Definition:                                                     │  │
+│  │                                                                        │  │
+│  │  app.post('/users', {                                                  │  │
+│  │      body: {                                                           │  │
+│  │          name: 'required|string',                                      │  │
+│  │          email: 'required|email'                                       │  │
+│  │      }                                                                 │  │
+│  │  })                                                                    │  │
+│  │                                                                        │  │
+│  │  Compiled Once At Startup                                              │  │
+│  │                                                                        │  │
+│  │  Then Every Request Uses The Same Validator                            │  │
+│  │                                                                        │  │
+│  │  If Invalid:                                                           │  │
+│  │                                                                        │  │
+│  │  {                                                                     │  │
+│  │    success: false,                                                     │  │
+│  │    errors: [                                                           │  │
+│  │      'email is required'                                               │  │
+│  │    ]                                                                   │  │
+│  │  }                                                                     │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                       6. ROUTE MIDDLEWARE                              │  │
+│  │                                                                        │  │
+│  │  Example:                                                              │  │
+│  │                                                                        │  │
+│  │  app.get('/profile', auth(), admin(), handler)                         │  │
+│  │                                                                        │  │
+│  │  Execution Order:                                                      │  │
+│  │                                                                        │  │
+│  │  auth()                                                                │  │
+│  │    ↓                                                                   │  │
+│  │  admin()                                                               │  │
+│  │    ↓                                                                   │  │
+│  │  handler                                                               │  │
+│  │                                                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                         7. CONTROLLER LAYER                            │  │
+│  │                                                                        │  │
+│  │  UserController                                                        │  │
+│  │   ├── listUsers()                                                      │  │
+│  │   ├── getUser()                                                        │  │
+│  │   ├── createUser()                                                     │  │
+│  │   ├── updateUser()                                                     │  │
+│  │   └── deleteUser()                                                     │  │
+│  │                                                                        │  │
+│  │  OR                                                                    │  │
+│  │                                                                        │  │
+│  │  Auto-generated CRUD Controller                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                          8. SERVICE LAYER                              │  │
+│  │                                                                        │  │
+│  │  Business Logic                                                        │  │
+│  │                                                                        │  │
+│  │  UserService                                                           │  │
+│  │  AuthService                                                           │  │
+│  │  EmailService                                                          │  │
+│  │                                                                        │  │
+│  │  Example:                                                              │  │
+│  │  - Check if email already exists                                       │  │
+│  │  - Hash password                                                       │  │
+│  │  - Send welcome email                                                  │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                         9. DATABASE LAYER                              │  │
+│  │                                                                        │  │
+│  │  Supported Plugins:                                                    │  │
+│  │                                                                        │  │
+│  │  MongoDB Plugin                                                        │  │
+│  │  MySQL Plugin                                                          │  │
+│  │  PostgreSQL Plugin                                                     │  │
+│  │                                                                        │  │
+│  │  Example:                                                              │  │
+│  │                                                                        │  │
+│  │  app.model('User', {                                                   │  │
+│  │      name: 'string',                                                   │  │
+│  │      email: 'string'                                                   │  │
+│  │  })                                                                    │  │
+│  │                                                                        │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+│                                 ▼                                            │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │                    10. RESPONSE SERIALIZER                             │  │
+│  │                                                                        │  │
+│  │  res.success(data)                                                     │  │
+│  │  res.error(message)                                                    │  │
+│  │                                                                        │  │
+│  │  Final Response:                                                       │  │
+│  │                                                                        │  │
+│  │  {                                                                     │  │
+│  │      success: true,                                                    │  │
+│  │      data: {                                                           │  │
+│  │          id: 1,                                                        │  │
+│  │          name: 'Dinesh'                                                │  │
+│  │      }                                                                 │  │
+│  │  }                                                                     │  │
+│  └──────────────────────────────┬─────────────────────────────────────────┘  │
+│                                 │                                            │
+└─────────────────────────────────┼────────────────────────────────────────────┘
+                                  │
+                                  ▼
+                         JSON Response Sent To Client
+
+AUTO CRUD FLOW
+==============
+
+app.model('User', {
+    name: 'string|required',
+    email: 'email|required'
+})
+
+        │
+        ▼
+
+app.generateCRUD('User')
+
+        │
+        ▼
+
+Automatically Creates:
+
+GET      /users
+GET      /users/:id
+POST     /users
+PUT      /users/:id
+DELETE   /users/:id
+
+        │
+        ▼
+
+Also Automatically Adds:
+
+- Validation
+- JWT Authentication
+- Pagination
+- Search
+- Swagger Docs
+- Standard Response Format
+- Error Handling
+
+PROJECT STRUCTURE
+=================
+
+src/
+├── core/
+│   ├── app.js
+│   ├── server.js
+│   ├── request.js
+│   ├── response.js
+│   └── error.js
+│
+├── router/
+│   ├── trie.js
+│   ├── router.js
+│   └── matcher.js
+│
+├── middleware/
+│   ├── compose.js
+│   ├── bodyParser.js
+│   ├── auth.js
+│   ├── logger.js
+│   └── cors.js
+│
+├── validation/
+│   ├── compiler.js
+│   ├── rules.js
+│   └── validator.js
+│
+├── crud/
+│   ├── model.js
+│   ├── generator.js
+│   └── resource.js
+│
+├── plugins/
+│   ├── mongodb/
+│   ├── mysql/
+│   ├── jwt/
+│   └── swagger/
+│
+├── cli/
+│   ├── create-app.js
+│   ├── generate-controller.js
+│   ├── generate-model.js
+│   └── generate-crud.js
+│
+└── index.js
