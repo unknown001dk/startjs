@@ -1,5 +1,6 @@
 import {
   createApp,
+  Router,
   bodyParser,
   cors,
   logger,
@@ -23,6 +24,35 @@ app.plugin(
 
 app.get("/health", (req, res) => {
   res.success({ status: "ok", environment: app.env });
+});
+
+const api = new Router();
+api.get("/users/:id(\\d+)", (req, res) => {
+  res.success({ userId: req.params.id, message: "Regex route matched" });
+});
+api.get("/files/*filepath", (req, res) => {
+  res.success({ path: req.params.filepath, type: "wildcard" });
+});
+
+const admin = new Router();
+admin.get("/dashboard", (req, res) => {
+  res.success({ admin: true, page: "dashboard" });
+});
+admin.get("/reports", (req, res) => {
+  res.success({ admin: true, page: "reports" });
+});
+
+app.use("/api", api);
+app.use("/admin", admin);
+
+app.group("/account", (router) => {
+  router.get("/profile", (req, res) => {
+    res.success({ profile: { name: "Dinesh", role: "admin" } });
+  });
+
+  router.get("/settings", (req, res) => {
+    res.success({ settings: { theme: "dark" } });
+  });
 });
 
 app.post(

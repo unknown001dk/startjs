@@ -1,75 +1,70 @@
-export class TrieNode {
-  constructor(segment = "") {
-    this.segment = segment;
-    this.children = new Map();
-    this.routes = [];
-    this.isParam = segment.startsWith(":");
-    this.paramName = this.isParam ? segment.slice(1) : null;
-  }
-
-  getChild(segment) {
-    return this.children.get(segment) || this.children.get("*") || null;
-  }
+export function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export class TrieRouter {
-  constructor() {
-    this.trees = new Map();
+export function normalizePath(pathname) {
+  const normalized = pathname.replace(/\/+/g, "/").replace(/\/$/, "");
+  return normalized || "/";
+}
+
+export function parseRoute(path) {
+  const [pathnamePart, searchPart] = path.split("?");
+  return {
+    pathname: normalizePath(pathnamePart || "/"),
+    search: searchPart ? `?${searchPart}` : null,
+  };
+}
+
+function compileSegments(segments, isPrefix = false) {
+  const keys = [];
+  let regex = "^";
+  let remainderIndex = null;
+
+  if (!segments.length) {
+    regex += "/";
   }
 
-  register(method, path, handlers) {
-    const root = this.trees.get(method) || new TrieNode("");
-    this.trees.set(method, root);
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
 
-    const { pathname, search } = this.parseRoute(path);
-    const segments = this.normalize(pathname).split("/").filter(Boolean);
-    let current = root;
-
-    for (const segment of segments) {
-      const key = segment.startsWith(":") ? "*" : segment;
-      if (!current.children.has(key)) {
-        current.children.set(key, new TrieNode(segment));
-      }
-      current = current.children.get(key);
+    if (segment.startsWith("*")) {
+      const key = segment.slice(1) || "wildcard";
+      keys.push(key);
+      regex += "/(.*)";
+      break;
     }
 
-    current.routes.push({ search, handlers });
-  }
-
-  match(method, path) {
-    const root = this.trees.get(method);
-    if (!root) return null;
-
-    const { pathname, search } = this.parseRoute(path);
-    const segments = this.normalize(pathname).split("/").filter(Boolean);
-    const params = {};
-    let current = root;
-
-    for (const segment of segments) {
-      const next = current.children.get(segment) || current.children.get("*");
-      if (!next) {
-        return null;
-      }
-      if (next.isParam) {
-        params[next.paramName] = decodeURIComponent(segment);
-      }
-      current = next;
+    if (segment.startsWith(":")) {
+      const match = segment.match(/^:([^()]+)(?:\((.+)\))?$/);
+      const name = match?.[1] || segment.slice(1);
+      const pattern = match?.[2] || "[^/]+";
+      keys.push(name);
+      regex += `/((${pattern}))`;
+      continue;
     }
 
-    if (!current.routes.length) return null;
-
-    const route = current.routes.find((route) => route.search === search);
-    if (!route) return null;
-
-    return { handlers: route.handlers, params, route: path };
+    regex += `/${escapeRegExp(segment)}`;
   }
 
-  parseRoute(path) {
-    const parsed = new URL(path, "http://localhost");
-    return { pathname: parsed.pathname, search: parsed.search };
+  if (isPrefix) {
+    remainderIndex = keys.length + 1;
+    regex += "(?:/(.*))?";
   }
 
-  normalize(path) {
-    return path.replace(/\/+/g, "/").replace(/\/$/, "") || "/";
-  }
+  regex += "/?$";
+  return { regex: new RegExp(regex), keys, remainderIndex };
+}
+
+export function compileRoute(path) {
+  const { pathname, search } = parseRoute(path);
+  const segments = pathname.split("/").filter(Boolean);
+  const { regex, keys } = compileSegments(segments);
+  return { pathname, search, regex, keys };
+}
+
+export function compilePrefix(path) {
+  const { pathname, search } = parseRoute(path);
+  const segments = pathname.split("/").filter(Boolean);
+  const { regex, keys, remainderIndex } = compileSegments(segments, true);
+  return { pathname, search, regex, keys, remainderIndex };
 }

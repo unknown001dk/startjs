@@ -37,7 +37,31 @@ export class StartApp {
   }
 
   use(...middlewares) {
+    if (middlewares.length === 1 && middlewares[0] instanceof Router) {
+      this.router.use(middlewares[0]);
+      return this;
+    }
+
+    if (
+      middlewares.length === 2 &&
+      typeof middlewares[0] === "string" &&
+      middlewares[1] instanceof Router
+    ) {
+      this.router.use(middlewares[0], middlewares[1]);
+      return this;
+    }
+
     this.globalMiddleware.push(...middlewares.flat());
+    return this;
+  }
+
+  mount(path, router) {
+    this.router.use(path, router);
+    return this;
+  }
+
+  group(prefix, callback) {
+    this.router.group(prefix, callback);
     return this;
   }
 

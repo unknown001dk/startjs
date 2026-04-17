@@ -4,13 +4,14 @@ import * as coreMiddleware from "./middleware/index.js";
 import * as validation from "./validation/index.js";
 import * as crud from "./crud/index.js";
 import * as plugins from "./plugins/index.js";
+import { Router } from "./router/router.js";
 
 export function createApp(options = {}) {
   const app = new StartApp(options);
   return app;
 }
 
-export { createServer, coreMiddleware, validation, crud, plugins };
+export { createServer, coreMiddleware, validation, crud, plugins, Router };
 export * from "./middleware/index.js";
 export * from "./validation/index.js";
 export * from "./crud/index.js";
